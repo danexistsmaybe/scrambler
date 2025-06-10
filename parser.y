@@ -542,11 +542,11 @@ a_term :
       node *n = $2;
       std::vector<node *> *v = $3;
       int idx = is_commutative($2);
-      if (idx >= 0) {
+      /*if (idx >= 0) {
           shuffle_list(v, idx, v->size());
       } else if (flip_antisymm($2, &n)) {
           std::reverse(v->begin(), v->end());
-      }
+      }*/
       $$ = make_node(n, $3);
       if (n != $2) {
           del_node($2);
