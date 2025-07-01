@@ -43,6 +43,10 @@
 #include <stack>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
+#include <ranges>
+#include <algorithm>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -317,6 +321,10 @@ void del_node(node *n)
 
 namespace scrambler {
 
+void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end, const std::vector<float>& ranks)
+{
+    std::sort((*v).begin(), (*v).end(), [&ranks](size_t x, size_t y) { return ranks[x] < ranks[y]; });
+}
 void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end)
 {
     if (!no_scramble) {

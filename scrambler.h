@@ -62,6 +62,7 @@ void set_logic(const std::string &logic);
 int is_commutative(const node *n);
 bool flip_antisymm(const node *n, node ** const out_n);
 
+void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end, const std::vector<float>& ranks);
 void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end);
 void shuffle_list(std::vector<node *> *v);
 
