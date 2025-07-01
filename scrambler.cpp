@@ -681,6 +681,37 @@ void print_command(std::ostream &out, const scrambler::node *n, annotation_mode 
     out << std::endl;
 }
 
+void print_ranked(std::ostream &out, annotation_mode keep_annotations)
+{
+    // declaration sorting goes here
+
+
+    // either run function to get scores or maybe feed it into this function? idk
+    std::vector<float> ranks;
+
+    // identify consecutive assertions and sort them
+    // currently this breaks if assertions are in multiple discrete groups
+    for (size_t i = 0; i < commands.size(); ) {
+        if (commands[i]->symbol == "assert") {
+            size_t j = i+1;
+            while (j < commands.size() && commands[j]->symbol == "assert"){ ++j; }
+            if (j - i > 1) {
+                shuffle_list(&commands, i, j, ranks);
+            }
+            i = j;
+        } else {
+            ++i;
+        }
+    }
+
+    // print all commands
+    for (size_t i = 0; i < commands.size(); ++i) {
+        print_command(out, commands[i], keep_annotations);
+        del_node(commands[i]);
+    }
+    commands.clear();
+}
+
 void print_scrambled(std::ostream &out, annotation_mode keep_annotations)
 {
     if (!no_scramble) {
