@@ -703,14 +703,20 @@ void print_ranked(std::ostream &out, annotation_mode keep_annotations)
     // identify consecutive assertions and sort them
     // currently this breaks if assertions are in multiple discrete groups because it's lazily copied from print_scrambled
     for (size_t i = 0; i < commands.size(); ) {
-        if (commands[i]->symbol == "assert") {
+        bool already = false;
+        if (commands[i]->symbol == "assert" && !already) {
+            already = true;
             size_t j = i+1;
             while (j < commands.size() && commands[j]->symbol == "assert"){ ++j; }
             if (j - i > 1) {
                 shuffle_list(&commands, i, j, ranks);
             }
             i = j;
-        } else {
+        } 
+        else if (commands[i]->symbol == "assert" && already) {
+            throw std::invalid_argument("assertions in multiple chunks");
+        }
+        else {
             ++i;
         }
     }
