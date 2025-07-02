@@ -321,10 +321,21 @@ void del_node(node *n)
 
 namespace scrambler {
 
-void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end, const std::vector<float>& ranks)
+void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end, const std::vector<float> &ranks)
 {
-    std::sort((*v).begin(), (*v).end(), [&ranks](size_t x, size_t y) { return ranks[x] < ranks[y]; });
+    size_t n = end - start;
+    std::vector<size_t> indices(n);
+    for (size_t i = 0; i < n; ++i) indices[i] = i;
+
+    std::sort(indices.begin(), indices.end(), [&ranks](size_t i, size_t j) { return ranks[i] < ranks[j]; });
+
+    std::vector<scrambler::node *> temp(n);
+    for (size_t i = 0; i < n; ++i)
+        temp[i] = (*v)[start + indices[i]];
+    for (size_t i = 0; i < n; ++i)
+        (*v)[start + i] = temp[i];
 }
+
 void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end)
 {
     if (!no_scramble) {
@@ -690,7 +701,7 @@ void print_ranked(std::ostream &out, annotation_mode keep_annotations)
     std::vector<float> ranks;
 
     // identify consecutive assertions and sort them
-    // currently this breaks if assertions are in multiple discrete groups
+    // currently this breaks if assertions are in multiple discrete groups because it's lazily copied from print_scrambled
     for (size_t i = 0; i < commands.size(); ) {
         if (commands[i]->symbol == "assert") {
             size_t j = i+1;
