@@ -692,6 +692,14 @@ void print_command(std::ostream &out, const scrambler::node *n, annotation_mode 
     out << std::endl;
 }
 
+std::vector<float> get_ranks(int size) {
+    std::vector<float> ranks(size);
+    for (int i = 0; i < size; ++i) {
+        ranks[i] = next_rand_int(1000) / 1000.0f; // random float in [0, 1)
+    }
+    return ranks;
+}
+
 void print_ranked(std::ostream &out, annotation_mode keep_annotations)
 {
     // declaration sorting goes here
@@ -708,6 +716,7 @@ void print_ranked(std::ostream &out, annotation_mode keep_annotations)
             already = true;
             size_t j = i+1;
             while (j < commands.size() && commands[j]->symbol == "assert"){ ++j; }
+            ranks = get_ranks(j - i);
             if (j - i > 1) {
                 shuffle_list(&commands, i, j, ranks);
             }
@@ -1147,7 +1156,8 @@ int main(int argc, char **argv)
                 filter_named(core_names);
             }
             assert(!commands.empty());
-            print_scrambled(std::cout, keep_annotations);
+            // print_scrambled(std::cout, keep_annotations);
+            print_ranked(std::cout, keep_annotations);
         }
     }
 
