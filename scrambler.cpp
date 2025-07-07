@@ -42,6 +42,7 @@
 #include <ctype.h>
 #include <stack>
 #include <unordered_map>
+#include <map>
 #include <unordered_set>
 #include <vector>
 #include <ranges>
@@ -320,21 +321,6 @@ void del_node(node *n)
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace scrambler {
-
-void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end, const std::vector<float> &ranks)
-{
-    size_t n = end - start;
-    std::vector<size_t> indices(n);
-    for (size_t i = 0; i < n; ++i) indices[i] = i;
-
-    std::sort(indices.begin(), indices.end(), [&ranks](size_t i, size_t j) { return ranks[i] < ranks[j]; });
-
-    std::vector<scrambler::node *> temp(n);
-    for (size_t i = 0; i < n; ++i)
-        temp[i] = (*v)[start + indices[i]];
-    for (size_t i = 0; i < n; ++i)
-        (*v)[start + i] = temp[i];
-}
 
 void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end)
 {
@@ -692,6 +678,100 @@ void print_command(std::ostream &out, const scrambler::node *n, annotation_mode 
     out << std::endl;
 }
 
+// ######################################################################################### //
+// BEGIN FUNTIONS AND VARIABLES FOR RENAMING, DECLARATION SORTING, AND  SCRAMBLING VIA RANKS //
+// ######################################################################################### //
+
+// next available name id
+uint64_t next_name_id_sorted = 1; 
+
+// map of "names" (variables, functions, etc) to their corresponding name id
+Name_ID_Map name_ids_sorted; 
+
+// declaring a new name
+void set_new_name_sorted(const char *n)
+{
+    n = unquote(n);
+
+    if (name_ids_sorted.find(n) == name_ids_sorted.end()) {
+        name_ids_sorted[n] = next_name_id_sorted;
+        ++next_name_id_sorted;
+    }
+}
+
+// getting a name's corresponding name id
+uint64_t get_name_id_sorted(const char *n)
+{
+    n = unquote(n);
+
+    return name_ids_sorted[n];  // 0 if n is not currently in name_ids
+}
+
+// finds nodes based on appearance where is_name is true and assigns them the next available name id 
+void assign_num(const scrambler::node *n){
+    for (size_t i = 0; i < n->children.size(); i++) {
+        scrambler::node *new_n = n->children[i];
+        if (!new_n->symbol.empty() && new_n -> is_name && new_n ->symbol != "=") {
+            set_new_name_sorted(new_n -> symbol.c_str());
+        }
+    }
+    for (size_t i = 0; i < n->children.size(); ++i) {
+        if (i > 0 || !n->symbol.empty()) {
+            assign_num(n->children[i]);
+        }
+    }
+}
+
+// returns the first occurence of a node where is_name is true, returns 0 if no such node is found
+uint64_t find_var(const scrambler::node *n){
+    for (size_t i = 0; i < n->children.size(); i++) {
+        scrambler::node *new_n = n->children[i];
+        if (!new_n->symbol.empty() && new_n -> is_name && new_n ->symbol != "=") {
+            return get_name_id_sorted(new_n -> symbol.c_str());
+        }
+    }
+    for (size_t i = 0; i < n->children.size(); ++i) {
+        if (i > 0 || !n->symbol.empty()) {
+            return find_var(n->children[i]);
+        }
+    }
+    return 0;
+}
+
+// used to sort declarations and definitions based on a name id's first occurence
+void sort_declarations(std::vector<scrambler::node *> *v, size_t start, size_t end){
+    std::vector<std::pair<uint64_t, scrambler::node*>> combined_data;
+    
+    for (size_t i = start; i < end; ++i) {
+        combined_data.push_back(std::make_pair(find_var((*v)[i]),(*v)[i]));
+    }
+
+    std::sort(combined_data.begin(), combined_data.end());
+    
+    for(size_t i = 0; i < end-start; i++){
+        commands[i+start] = combined_data[i].second;
+    }
+}
+
+// used to sort assertions based on a float vector of ranks
+namespace scrambler{
+    void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end, const std::vector<float> &ranks)
+    {
+        size_t n = end - start;
+        std::vector<size_t> indices(n);
+        for (size_t i = 0; i < n; ++i) indices[i] = i;
+    
+        std::sort(indices.begin(), indices.end(), [&ranks](size_t i, size_t j) { return ranks[i] < ranks[j]; });
+    
+        std::vector<scrambler::node *> temp(n);
+        for (size_t i = 0; i < n; ++i)
+            temp[i] = (*v)[start + indices[i]];
+        for (size_t i = 0; i < n; ++i)
+            (*v)[start + i] = temp[i];
+    }
+}
+
+// used to test shuffle_list
 std::vector<float> get_ranks(int size) {
     std::vector<float> ranks(size);
     for (int i = 0; i < size; ++i) {
@@ -700,11 +780,76 @@ std::vector<float> get_ranks(int size) {
     return ranks;
 }
 
-void print_ranked(std::ostream &out, annotation_mode keep_annotations)
+// modified version of print_node
+void print_node_sorted(std::ostream &out, const scrambler::node *n, annotation_mode keep_annotations)
 {
-    // declaration sorting goes here
+    if (n->symbol == "!" && !keep_annotation(n, keep_annotations)) {
+        print_node_sorted(out, n->children[0], keep_annotations);
+    } else {
+        if (n->needs_parens) {
+            out << '(';
+        }
+        if (!n->symbol.empty()) {
+            if (no_scramble || !n->is_name) {
+                out << n->symbol;
+            } else {
+                // uses get_name_id_sorted
+                uint64_t name_id = get_name_id_sorted(n->symbol.c_str());
+                if (name_id == 0) {
+                    out << n->symbol;
+                } else {
+                    out << make_name(name_id);
+                }
+            }
+        }
+        std::string name;
+        if (gen_ucore && n->symbol == "assert") {
+            name = make_annotation_name();
+        }
+        if (!name.empty()) {
+            out << " (!";
+        }
+        for (size_t i = 0; i < n->children.size(); ++i) {
+            if (i > 0 || !n->symbol.empty()) {
+                out << ' ';
+            }
+            print_node_sorted(out, n->children[i], keep_annotations);
+        }
+        if (!name.empty()) {
+            out << " :named " << name << ")";
+        }
+        if (n->needs_parens) {
+            out << ')';
+        }
+        if (n->symbol == "check-sat") {
+            if (gen_ucore) {
+                // insert (get-unsat-core) after each check-sat
+                out << std::endl << "(get-unsat-core)";
+            }
+            if (gen_mval) {
+                // insert (get-model) after each check-sat
+                out << std::endl << "(get-model)";
+            }
+            if (gen_proof) {
+                // insert (get-proof) after each check-sat
+                out << std::endl << "(get-proof)";
+            }
+        }
+    }
+}
+
+// modified version of print_command
+void print_command_sorted(std::ostream &out, const scrambler::node *n, annotation_mode keep_annotations)
+{
+    // uses print_node_sorted
+    print_node_sorted(out, n, keep_annotations);
+    out << std::endl;
+}
 
 
+// modified version of print_scrambled
+void print_ranked(std::ostream &out, annotation_mode keep_annotations)
+{   
     // either run function to get scores or maybe feed it into this function? idk
     std::vector<float> ranks;
 
@@ -730,13 +875,48 @@ void print_ranked(std::ostream &out, annotation_mode keep_annotations)
         }
     }
 
-    // print all commands
+    // assign each variable a number in correspondence to
+    // its first appearance in the newly sorted assertions
+    for (size_t i = 0; i < commands.size(); i++){
+        if (commands[i] -> symbol == "assert"){
+            assign_num(commands[i]);
+        }
+    }
+
+    // sort declarations and definitions    
+    // currently this breaks if declarations or definitions are in multiple discrete groups because it's lazily copied from print_scrambled
+    for (size_t i = 0; i < commands.size(); ) {
+        bool already = false;
+        if (((commands[i] -> symbol).find("declare") != std::string::npos ||(commands[i] -> symbol).find("define") != std::string::npos) && !already) {
+            already = true;
+            size_t j = i+1;
+            while (j < commands.size() && ((commands[j] -> symbol).find("declare") != std::string::npos ||(commands[j] -> symbol).find("define") != std::string::npos)){ ++j; }
+            if (j - i > 1) {
+                sort_declarations(&commands, i, j);
+            }
+            i = j;
+        } 
+        else if (((commands[i] -> symbol).find("declare") != std::string::npos ||(commands[i] -> symbol).find("define") != std::string::npos) && already) {
+            throw std::invalid_argument("declarations and definitions in multiple chunks");
+        }
+        else {
+            ++i;
+        }
+    }
+
+    // print all commands using print_commands_sorted
     for (size_t i = 0; i < commands.size(); ++i) {
-        print_command(out, commands[i], keep_annotations);
+        print_command_sorted(out, commands[i], keep_annotations);
         del_node(commands[i]);
     }
     commands.clear();
 }
+
+// ####################################################################################### //
+// END FUNTIONS AND VARIABLES FOR RENAMING, DECLARATION SORTING, AND  SCRAMBLING VIA RANKS //
+// ####################################################################################### //
+
+
 
 void print_scrambled(std::ostream &out, annotation_mode keep_annotations)
 {
@@ -1165,7 +1345,9 @@ int main(int argc, char **argv)
         filter_named(core_names);
     }
     if (!commands.empty()) {
-        print_scrambled(std::cout, keep_annotations);
+        // print_scrambled(std::cout, keep_annotations);
+        print_ranked(std::cout, keep_annotations);
+
     }
 
     return 0;
