@@ -707,7 +707,7 @@ uint64_t get_name_id_sorted(const char *n)
     return name_ids_sorted[n];  // 0 if n is not currently in name_ids
 }
 
-// finds nodes based on appearance where is_name is true and assigns them the next available name id 
+// used to find nodes where is_name is true and assigns them the next available name id 
 void assign_num(const scrambler::node *n){
     for (size_t i = 0; i < n->children.size(); i++) {
         scrambler::node *new_n = n->children[i];
