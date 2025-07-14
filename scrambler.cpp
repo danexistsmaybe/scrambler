@@ -131,6 +131,11 @@ bool support_z3 = false;
  */
 bool count_asrts = false;
 
+/*
+    stores the name of the query intended to be fed into the 
+*/
+std::string ranks_file_name;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -1166,7 +1171,9 @@ void usage(const char *program)
               << "\n"
               << "    -count-asserts [true|false]\n"
               << "        controls whether the number of assertions found in the benchmark\n"
-              << "        is printed to stderr (default: false)\n\n";
+              << "        is printed to stderr (default: false)\n\n"
+              << "    -ranks <file>\n"
+              << "        specifies a file containing the ranks to be used for sorting\n\n";
     std::cout.flush();
     exit(1);
 }
@@ -1276,6 +1283,14 @@ int main(int argc, char **argv)
                 count_asrts = true;
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 count_asrts = false;
+            } else {
+                usage(argv[0]);
+            }
+            i += 2;
+        } else if (strcmp(argv[i], "-ranks") == 0 && i + 1 < argc) {
+            std::string s(argv[i+1]);
+            if (!s.empty()) {
+                ranks_file_name = s;
             } else {
                 usage(argv[0]);
             }
