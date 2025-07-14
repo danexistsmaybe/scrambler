@@ -778,11 +778,20 @@ namespace scrambler{
 
 // used to test shuffle_list
 std::vector<float> get_ranks(int size) {
-    std::vector<float> ranks(size);
+    std::vector<float> output(size);
+    std::ifstream file(ranks_file_name);
+    if (!file.is_open()) {
+        std::cerr << "Error opening ranks file: " << ranks_file_name << std::endl;
+        return std::vector<float>(size, 0.0f); // return zeros
     for (int i = 0; i < size; ++i) {
-        ranks[i] = next_rand_int(1000) / 1000.0f; // random float in [0, 1)
+        if (!(file >> output[i])) {
+            std::cerr << "Error reading ranks from file." << std::endl;
+            return std::vector<float>(size, 0.0f); // return zeros if size is incorrect
+        }
     }
-    return ranks;
+    }
+    file.close();
+    return output;
 }
 
 // modified version of print_node
