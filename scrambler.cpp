@@ -783,12 +783,12 @@ std::vector<float> get_ranks(int size) {
     if (!file.is_open()) {
         std::cerr << "Error opening ranks file: " << ranks_file_name << std::endl;
         return std::vector<float>(size, 0.0f); // return zeros
+    }
     for (int i = 0; i < size; ++i) {
         if (!(file >> output[i])) {
             std::cerr << "Error reading ranks from file." << std::endl;
             return std::vector<float>(size, 0.0f); // return zeros if size is incorrect
         }
-    }
     }
     file.close();
     return output;
@@ -1225,6 +1225,7 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i+1], "false") == 0) {
                 keep_annotations = none;
             } else {
+                std::cerr << "1" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1238,6 +1239,7 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 gen_incremental = false;
             } else {
+                std::cerr << "2" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1247,6 +1249,7 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 gen_ucore = false;
             } else {
+                std::cerr << "3" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1256,6 +1259,7 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 gen_mval = false;
             } else {
+                std::cerr << "4" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1265,16 +1269,17 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 gen_proof = false;
             } else {
+                std::cerr << "5" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
-        } else if (strcmp(argv[i], "-support-non-smtcomp") == 0 &&
-                   i + 1 < argc) {
+        } else if (strcmp(argv[i], "-support-non-smtcomp") == 0 && i + 1 < argc) {
             if (strcmp(argv[i + 1], "true") == 0) {
                 support_non_smtcomp = true;
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 support_non_smtcomp = false;
             } else {
+                std::cerr << "6" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1284,6 +1289,7 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 support_z3 = false;
             } else {
+                std::cerr << "7" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1293,18 +1299,18 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 count_asrts = false;
             } else {
+                std::cerr << "8" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
         } else if (strcmp(argv[i], "-ranks") == 0 && i + 1 < argc) {
-            std::string s(argv[i+1]);
-            if (!s.empty()) {
-                ranks_file_name = s;
-            } else {
-                usage(argv[0]);
-            }
+            ranks_file_name = argv[i+1];
+            std::cerr << "Ranks file: " << ranks_file_name << std::endl;
             i += 2;
         } else {
+            std::cerr << "9" << std::endl;
+            std::cerr << "argc: " << argc << std::endl;
+            std::cerr << "i: " << i << std::endl;
             usage(argv[0]);
         }
     }
