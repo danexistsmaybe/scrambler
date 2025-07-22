@@ -1201,7 +1201,7 @@ int main(int argc, char **argv)
     std::string core_file;
 
     set_seed(time(0));
-
+    
     for (int i = 1; i < argc; ) {
         if (strcmp(argv[i], "-seed") == 0 && i+1 < argc) {
             std::istringstream s(argv[i+1]);
@@ -1225,7 +1225,6 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i+1], "false") == 0) {
                 keep_annotations = none;
             } else {
-                std::cerr << "1" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1239,7 +1238,6 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 gen_incremental = false;
             } else {
-                std::cerr << "2" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1249,7 +1247,6 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 gen_ucore = false;
             } else {
-                std::cerr << "3" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1259,7 +1256,6 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 gen_mval = false;
             } else {
-                std::cerr << "4" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1269,7 +1265,6 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 gen_proof = false;
             } else {
-                std::cerr << "5" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1279,7 +1274,6 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 support_non_smtcomp = false;
             } else {
-                std::cerr << "6" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1289,7 +1283,6 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 support_z3 = false;
             } else {
-                std::cerr << "7" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
@@ -1299,18 +1292,18 @@ int main(int argc, char **argv)
             } else if (strcmp(argv[i + 1], "false") == 0) {
                 count_asrts = false;
             } else {
-                std::cerr << "8" << std::endl;
                 usage(argv[0]);
             }
             i += 2;
         } else if (strcmp(argv[i], "-ranks") == 0 && i + 1 < argc) {
-            ranks_file_name = argv[i+1];
-            std::cerr << "Ranks file: " << ranks_file_name << std::endl;
+            if (strcmp(argv[i + 1], "") == 0) {
+                usage(argv[0]);
+            }
+            else {
+                ranks_file_name = argv[i+1];
+            }
             i += 2;
         } else {
-            std::cerr << "9" << std::endl;
-            std::cerr << "argc: " << argc << std::endl;
-            std::cerr << "i: " << i << std::endl;
             usage(argv[0]);
         }
     }
@@ -1367,6 +1360,7 @@ int main(int argc, char **argv)
             }
             assert(!commands.empty());
             // print_scrambled(std::cout, keep_annotations);
+            std::cout << "Printing Ranked: " + ranks_file_name << std::endl;
             print_ranked(std::cout, keep_annotations);
         }
     }
