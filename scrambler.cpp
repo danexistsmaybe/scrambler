@@ -760,34 +760,32 @@ void sort_declarations(std::vector<scrambler::node *> *v, size_t start, size_t e
 
 // used to sort assertions based on a float vector of ranks
 namespace scrambler{
-    void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end, const std::vector<float> &ranks)
+    void shuffle_list(std::vector<scrambler::node *> *v, size_t start, size_t end, const std::vector<int> &ranks)
     {
         size_t n = end - start;
-        std::vector<size_t> indices(n);
-        for (size_t i = 0; i < n; ++i) indices[i] = i;
-    
-        std::sort(indices.begin(), indices.end(), [&ranks](size_t i, size_t j) { return ranks[i] < ranks[j]; });
-    
         std::vector<scrambler::node *> temp(n);
+
         for (size_t i = 0; i < n; ++i)
-            temp[i] = (*v)[start + indices[i]];
+            temp[i] = (*v)[ranks[i]];
         for (size_t i = 0; i < n; ++i)
-            (*v)[start + i] = temp[i];
+            (*v)[i] = temp[i];
     }
 }
 
 // used to test shuffle_list
-std::vector<float> get_ranks(int size) {
-    std::vector<float> output(size);
+std::vector<int> get_ranks(int size) {
+    std::vector<int> output(size);
     std::ifstream file(ranks_file_name);
     if (!file.is_open()) {
         std::cerr << "Error opening ranks file: " << ranks_file_name << std::endl;
-        return std::vector<float>(size, 0.0f); // return zeros
+        return std::vector<int>(size, 0.0f); // return zeros
     }
     for (int i = 0; i < size; ++i) {
         if (!(file >> output[i])) {
+            std::cerr << "i value: " << i << std::endl;
+            std::cerr << "Expected " << size << std::endl;
             std::cerr << "Error reading ranks from file." << std::endl;
-            return std::vector<float>(size, 0.0f); // return zeros if size is incorrect
+            return std::vector<int>(size, 0.0f); // return zeros if size is incorrect
         }
     }
     file.close();
@@ -865,7 +863,7 @@ void print_command_sorted(std::ostream &out, const scrambler::node *n, annotatio
 void print_ranked(std::ostream &out, annotation_mode keep_annotations)
 {   
     // either run function to get scores or maybe feed it into this function? idk
-    std::vector<float> ranks;
+    std::vector<int> ranks;
 
     // identify consecutive assertions and sort them
     // currently this breaks if assertions are in multiple discrete groups because it's lazily copied from print_scrambled
@@ -1360,7 +1358,7 @@ int main(int argc, char **argv)
             }
             assert(!commands.empty());
             // print_scrambled(std::cout, keep_annotations);
-            std::cout << "Printing Ranked: " + ranks_file_name << std::endl;
+            // std::cout << "Printing Ranked: " + ranks_file_name << std::endl;
             print_ranked(std::cout, keep_annotations);
         }
     }
