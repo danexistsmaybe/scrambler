@@ -754,7 +754,7 @@ void sort_declarations(std::vector<scrambler::node *> *v, size_t start, size_t e
     std::sort(combined_data.begin(), combined_data.end());
     
     for(size_t i = 0; i < end-start; i++){
-        commands[i+start] = combined_data[i].second;
+        (*v)[i+start] = combined_data[i].second;
     }
 }
 
@@ -768,7 +768,7 @@ namespace scrambler{
         for (size_t i = 0; i < n; ++i)
             temp[i] = (*v)[ranks[i]];
         for (size_t i = 0; i < n; ++i)
-            (*v)[i] = temp[i];
+            (*v)[i + start] = temp[i];
     }
 }
 
@@ -897,24 +897,24 @@ void print_ranked(std::ostream &out, annotation_mode keep_annotations)
 
     // sort declarations and definitions    
     // currently this breaks if declarations or definitions are in multiple discrete groups because it's lazily copied from print_scrambled
-    for (size_t i = 0; i < commands.size(); ) {
-        bool already = false;
-        if (((commands[i] -> symbol).find("declare") != std::string::npos ||(commands[i] -> symbol).find("define") != std::string::npos) && !already) {
-            already = true;
-            size_t j = i+1;
-            while (j < commands.size() && ((commands[j] -> symbol).find("declare") != std::string::npos ||(commands[j] -> symbol).find("define") != std::string::npos)){ ++j; }
-            if (j - i > 1) {
-                sort_declarations(&commands, i, j);
-            }
-            i = j;
-        } 
-        else if (((commands[i] -> symbol).find("declare") != std::string::npos ||(commands[i] -> symbol).find("define") != std::string::npos) && already) {
-            throw std::invalid_argument("declarations and definitions in multiple chunks");
-        }
-        else {
-            ++i;
-        }
-    }
+    // for (size_t i = 0; i < commands.size(); ) {
+    //     bool already = false;
+    //     if (((commands[i] -> symbol).find("declare") != std::string::npos ||(commands[i] -> symbol).find("define") != std::string::npos) && !already) {
+    //         already = true;
+    //         size_t j = i+1;
+    //         while (j < commands.size() && ((commands[j] -> symbol).find("declare") != std::string::npos ||(commands[j] -> symbol).find("define") != std::string::npos)){ ++j; }
+    //         if (j - i > 1) {
+    //             sort_declarations(&commands, i, j);
+    //         }
+    //         i = j;
+    //     } 
+    //     else if (((commands[i] -> symbol).find("declare") != std::string::npos ||(commands[i] -> symbol).find("define") != std::string::npos) && already) {
+    //         throw std::invalid_argument("declarations and definitions in multiple chunks");
+    //     }
+    //     else {
+    //         ++i;
+    //     }
+    // }
 
     // print all commands using print_commands_sorted
     for (size_t i = 0; i < commands.size(); ++i) {
